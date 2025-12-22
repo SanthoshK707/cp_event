@@ -82,13 +82,29 @@ export async function POST(request: NextRequest) {
 //     const teamId = team._id.toString();
 //     const cfHandle = team.codeforcesHandle;
 
-    const questions = await Question.find({}).sort({ gridIndex: 1 });
-    if (!questions || questions.length === 0) {
+    const allQuestions = await Question.find({}).sort({ gridIndex: 1 });
+    if (!allQuestions || allQuestions.length === 0) {
       return NextResponse.json<SyncResponse>(
         { success: false, error: 'No questions found' },
         { status: 404 }
       );
     }
+
+    let teamScore = await TeamScore.findOne({ teamId: DUMMY_TEAM_ID });
+    if (!teamScore) {
+      return NextResponse.json<SyncResponse>(
+        { success: false, error: 'Team not initialized. Please load the game first.' },
+        { status: 400 }
+      );
+    }
+    
+    const teamQuestions = teamScore.questionOrder.map((originalIndex: number, gridPosition: number) => {
+      const question = allQuestions[originalIndex];
+      return {
+        ...question.toObject(),
+        gridIndex: gridPosition,
+      };
+    });
 
     const submissionsResult = await fetchTeamSubmissions([DUMMY_CF_HANDLE]);
     // const submissionsResult = await fetchTeamSubmissions([cfHandle]);
@@ -101,12 +117,12 @@ export async function POST(request: NextRequest) {
 
     const scoreResult = calculateTeamScore(
       submissionsResult.submissions!,
-      questions
+      teamQuestions
     );
 
     let lastSubmissionTime: Date | null = null;
     if (scoreResult.solvedIndices.length > 0) {
-      const solvedProblems = questions.filter((p: any) =>
+      const solvedProblems = teamQuestions.filter((p: any) =>
         scoreResult.solvedIndices.includes(p.gridIndex)
       );
 
