@@ -1,7 +1,3 @@
-<<<<<<< Updated upstream
-export default function Round_1_Page() {
-  return <div>Round 1 Page</div>;
-=======
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -300,5 +296,4 @@ export default function Round1Page() {
       </footer>
     </div>
   );
->>>>>>> Stashed changes
 }
