@@ -17,29 +17,6 @@ interface Progress {
   bingoLines: number[][];
 }
 
-// dummy data for now - swap with API later
-const MOCK_GAME_DATA: GameData = {
-  id: 'round1',
-  name: 'Round 1',
-  problems: [
-    { gridIndex: 0, contestId: '1926', problemIndex: 'A', name: 'Vlad and the Best of Five', points: 10 },
-    { gridIndex: 1, contestId: '1926', problemIndex: 'B', name: 'Vlad and Shapes', points: 10 },
-    { gridIndex: 2, contestId: '1926', problemIndex: 'C', name: 'Vlad and a Sum of Sum of Digits', points: 10 },
-    { gridIndex: 3, contestId: '1927', problemIndex: 'A', name: 'Make it White', points: 10 },
-    { gridIndex: 4, contestId: '1927', problemIndex: 'B', name: 'Following the String', points: 10 },
-    { gridIndex: 5, contestId: '1927', problemIndex: 'C', name: 'Choose the Different Ones', points: 10 },
-    { gridIndex: 6, contestId: '1928', problemIndex: 'A', name: 'Rectangle Cutting', points: 10 },
-    { gridIndex: 7, contestId: '1928', problemIndex: 'B', name: 'Equalize', points: 10 },
-    { gridIndex: 8, contestId: '1928', problemIndex: 'C', name: 'Physical Education Lesson', points: 10 },
-  ],
-};
-
-const MOCK_PROGRESS: Progress = {
-  solvedIndices: [0, 1, 4], // testing with 3 solved
-  currentScore: 30,
-  bingoLines: [],
-};
-
 export default function Round1Page() {
   const [game, setGame] = useState<GameData | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
@@ -50,14 +27,15 @@ export default function Round1Page() {
   useEffect(() => {
     const loadGameData = async () => {
       try {
-        // fetch from /api/game?round=1 here
-        // const res = await fetch('/api/game?round=1');
-        // const data = await res.json();
+        const res = await fetch('/api/question');
+        const data = await res.json();
 
-        // fake delay for testing
-        await new Promise(resolve => setTimeout(resolve, 800));
-        setGame(MOCK_GAME_DATA);
-        setProgress(MOCK_PROGRESS);
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to load questions');
+        }
+
+        setGame(data.game);
+        setProgress(data.progress);
       } catch (err) {
         setError('Failed to load game data');
       } finally {
@@ -69,31 +47,20 @@ export default function Round1Page() {
   }, []);
 
   const handleSync = useCallback(async (): Promise<void> => {
-    // hook up to /api/sync-score POST
-    // const res = await fetch('/api/sync-score', { method: 'POST' });
-    // const data = await res.json();
+    try {
+      const res = await fetch('/api/sync-score', { method: 'POST' });
+      const data = await res.json();
 
-    // fake sync for demo
-    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
-
-    // randomly mark a problem as solved for testing
-    if (progress) {
-      const newSolvedIndices = [...progress.solvedIndices];
-      const unsolvedIndices = [0, 1, 2, 3, 4, 5, 6, 7, 8].filter(i => !newSolvedIndices.includes(i));
-      if (unsolvedIndices.length > 0) {
-        const randomIndex = unsolvedIndices[Math.floor(Math.random() * unsolvedIndices.length)];
-        newSolvedIndices.push(randomIndex);
+      if (data.success) {
+        setProgress(data.progress);
+        setLastSyncTime(new Date());
+      } else {
+        setError(data.error || 'Sync failed');
       }
-
-      setProgress({
-        ...progress,
-        solvedIndices: newSolvedIndices,
-        currentScore: newSolvedIndices.length * 10,
-      });
+    } catch (err) {
+      setError('Failed to sync with Codeforces');
     }
-
-    setLastSyncTime(new Date());
-  }, [progress]);
+  }, []);
 
   const getBingoIndices = useCallback((): Set<number> => {
     if (!progress?.bingoLines) return new Set();
@@ -178,75 +145,52 @@ export default function Round1Page() {
         </header>
 
         {/* Stats Dashboard */}
-{/* Stats Dashboard */}
-<section className="flex justify-center mb-12 sm:mb-16">
-  <div
-    className="
-      flex w-full max-w-md sm:max-w-3xl
-      bg-[#0b0b0b]
-      rounded-3xl
-      border border-white/10
-      overflow-hidden
-      shadow-[0_10px_40px_rgba(0,0,0,0.6)]
-    "
-  >
-    {/* TOTAL SCORE */}
-    <div className="flex-1 px-4 py-3 sm:px-6 sm:py-4 text-center">
-      <p className="font-ui text-[9px] sm:text-[10px] uppercase tracking-[0.25em] text-white/40 mb-1">
-        Total Score
-      </p>
-      <div className="flex items-end justify-center gap-2">
-        <span className="text-4xl sm:text-5xl font-display font-bold">
-          {progress?.currentScore || 0}
-        </span>
-        <span className="font-ui text-[10px] sm:text-xs text-white/30 mb-1">
-          PTS
-        </span>
-      </div>
-    </div>
+        <section className="grid grid-cols-1 sm:grid-cols-3 gap-0 mb-6 sm:mb-8 border border-white/10">
+          {/* Score */}
+          <div className="p-4 sm:p-5 border-b sm:border-b-0 sm:border-r border-white/10 group hover:bg-white transition-colors duration-300">
+            <p className="font-ui text-[9px] sm:text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] mb-2 text-white/40 group-hover:text-black/40 transition-colors">
+              Total Score
+            </p>
+            <div className="flex items-end gap-2">
+              <span className="text-5xl sm:text-6xl font-display font-bold group-hover:text-black transition-colors">
+                {progress?.currentScore || 0}
+              </span>
+              <span className="font-ui text-[10px] sm:text-xs mb-2 text-white/20 group-hover:text-black/20 transition-colors">
+                PTS
+              </span>
+            </div>
+          </div>
 
-    {/* DIVIDER */}
-    <div className="w-px bg-white/10 my-3 sm:my-4" />
+          {/* Solved Count */}
+          <div className="p-4 sm:p-5 border-b sm:border-b-0 sm:border-r border-white/10 group hover:bg-white transition-colors duration-300">
+            <p className="font-ui text-[9px] sm:text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] mb-2 text-white/40 group-hover:text-black/40 transition-colors">
+              Problems Solved
+            </p>
+            <div className="flex items-end gap-2">
+              <span className="text-5xl sm:text-6xl font-display font-bold group-hover:text-black transition-colors">
+                {progress?.solvedIndices?.length || 0}
+              </span>
+              <span className="font-ui text-[10px] sm:text-xs mb-2 text-white/20 group-hover:text-black/20 transition-colors">
+                / 09
+              </span>
+            </div>
+          </div>
 
-    {/* PROBLEMS SOLVED */}
-    <div className="flex-1 px-4 py-3 sm:px-6 sm:py-4 text-center">
-      <p className="font-ui text-[9px] sm:text-[10px] uppercase tracking-[0.25em] text-white/40 mb-1">
-        Solved
-      </p>
-      <div className="flex items-end justify-center gap-2">
-        <span className="text-4xl sm:text-5xl font-display font-bold">
-          {progress?.solvedIndices?.length || 0}
-        </span>
-        <span className="font-ui text-[10px] sm:text-xs text-white/30 mb-1">
-          / 09
-        </span>
-      </div>
-    </div>
-
-    {/* DIVIDER */}
-    <div className="w-px bg-white/10 my-3 sm:my-4" />
-
-    {/* BINGO LINES */}
-    <div className="flex-1 px-4 py-3 sm:px-6 sm:py-4 text-center">
-      <p className="font-ui text-[9px] sm:text-[10px] uppercase tracking-[0.25em] text-white/40 mb-1">
-        Bingo Lines
-      </p>
-      <div className="flex items-end justify-center gap-2">
-        <span className="text-4xl sm:text-5xl font-display font-bold">
-          {progress?.bingoLines?.length || 0}
-        </span>
-        <span className="font-ui text-[10px] sm:text-xs text-white/30 mb-1">
-          BINGOS
-        </span>
-      </div>
-    </div>
-  </div>
-</section>
-
-
-<div className="flex justify-center mb-8">
-  <div className="w-24 h-[1px] bg-white/10" />
-</div>
+          {/* Bingo Lines */}
+          <div className="p-4 sm:p-5 group hover:bg-white transition-colors duration-300">
+            <p className="font-ui text-[9px] sm:text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] mb-2 text-white/40 group-hover:text-black/40 transition-colors">
+              Bingo Lines
+            </p>
+            <div className="flex items-end gap-2">
+              <span className="text-5xl sm:text-6xl font-display font-bold group-hover:text-black transition-colors">
+                {progress?.bingoLines?.length || 0}
+              </span>
+              <span className="font-ui text-[10px] sm:text-xs mb-2 text-white/20 group-hover:text-black/20 transition-colors">
+                BINGOS
+              </span>
+            </div>
+          </div>
+        </section>
 
         {/* Bingo Grid */}
         <div className="grid grid-cols-3 gap-0 border border-white/10 mb-6 sm:mb-8 shadow-[0_0_60px_rgba(255,255,255,0.03)]">

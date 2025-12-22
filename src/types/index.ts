@@ -1,43 +1,34 @@
-// mongodb team model
+// ===========================================
+// TYPE DEFINITIONS FOR CODEFORCES BINGO
+// ===========================================
+
 export interface ITeam {
     _id?: string;
     teamName: string;
     password: string;
-    members: string[]; // cf handles
+    members: string[];
+    codeforcesHandle: string;
     lastSync: Date | null;
     createdAt?: Date;
     updatedAt?: Date;
 }
 
-// individual problem details
 export interface IProblem {
-    gridIndex: number; // 0-8 position
-    contestId: string; // cf contest id
-    problemIndex: string; // e.g. 'A'
+    gridIndex: number;
+    contestId: string;
+    problemIndex: string;
     name: string;
     points: number;
-    url?: string;
+    url: string;
 }
 
-// contest/round setup
-export interface IGameConfig {
-    _id?: string;
-    roundId: number;
-    name: string;
-    problems: IProblem[];
-    startTime?: Date;
-    endTime?: Date;
-    isActive: boolean;
-}
-
-// live status for a team
-export interface ITeamProgress {
+export interface ITeamScore {
     _id?: string;
     teamId: string;
-    gameConfigId: string;
+    questionOrder: number[];
     solvedIndices: number[];
     currentScore: number;
-    bingoLines: number[][]; // completed lines
+    bingoLines: number[][];
     lastSubmissionTime: Date | null;
     syncCount: number;
 }

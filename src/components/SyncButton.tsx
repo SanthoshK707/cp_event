@@ -78,7 +78,6 @@ export function SyncButton({ onSync, lastSyncTime }: SyncButtonProps) {
                     </span>
                 )}
 
-                {/* those little corners */}
                 {!isDisabled && (
                     <>
                         <div className="absolute -top-1 -left-1 w-2 h-2 bg-white" />

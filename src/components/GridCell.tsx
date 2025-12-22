@@ -10,7 +10,7 @@ interface GridCellProps {
 
 // singular cell in the bingo grid
 export function GridCell({ problem, isSolved, isBingoCell = false }: GridCellProps) {
-    const cfUrl = `https://codeforces.com/contest/${problem.contestId}/problem/${problem.problemIndex}`;
+    const cfUrl = problem.url || `https://codeforces.com/contest/${problem.contestId}/problem/${problem.problemIndex}`;
 
     return (
         <a
@@ -19,10 +19,10 @@ export function GridCell({ problem, isSolved, isBingoCell = false }: GridCellPro
             rel="noopener noreferrer"
             className={`
                 relative flex flex-col items-center justify-center p-3 sm:p-4 border transition-all duration-500 group overflow-hidden
-                min-h-[100px] sm:min-h-[120px]
+                min-h-[100px] sm:min-h-[120px] cursor-pointer
                 ${isSolved
                     ? 'bg-white border-white'
-                    : 'bg-black/40 border-white/10 hover:border-white/40'
+                    : 'bg-black/40 border-white/10 hover:border-white/40 hover:bg-black/60'
                 }
                 ${isBingoCell && isSolved ? 'ring-offset-2 ring-offset-black ring-2 ring-white' : ''}
             `}
@@ -43,31 +43,31 @@ export function GridCell({ problem, isSolved, isBingoCell = false }: GridCellPro
                 )}
             </div>
 
-            {/* problem ID like 'A', 'B' etc */}
+            {/* problem ID badge */}
             <div
                 className={`
                     absolute top-0 left-0 px-2 sm:px-3 py-1 font-ui text-[9px] sm:text-[10px] uppercase tracking-widest z-20
-                    ${isSolved ? 'bg-black text-white' : 'bg-white/10 text-gray-500'}
+                    ${isSolved ? 'bg-black text-white' : 'bg-white/10 text-gray-400 group-hover:text-white group-hover:bg-white/20'}
                 `}
             >
-                {problem.problemIndex}
+                {problem.contestId}-{problem.problemIndex}
             </div>
 
             {/* shows points */}
             <div
                 className={`
                     absolute top-2 right-2 font-ui text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 border z-20
-                    ${isSolved ? 'border-black/20 text-black' : 'border-white/10 text-white/40'}
+                    ${isSolved ? 'border-black/20 text-black' : 'border-white/10 text-white/40 group-hover:border-white/30 group-hover:text-white/60'}
                 `}
             >
                 +{problem.points} PT
             </div>
 
-            {/* problem title */}
+            {/* problem title - clickable */}
             <div className="z-10 text-center relative px-2">
                 <p className={`
                     text-xs sm:text-base font-display font-medium tracking-tight mb-1 line-clamp-2
-                    ${isSolved ? 'text-black' : 'text-white'}
+                    ${isSolved ? 'text-black' : 'text-white group-hover:text-white/90'}
                 `}>
                     {problem.name || `Problem ${problem.problemIndex}`}
                 </p>
@@ -77,15 +77,15 @@ export function GridCell({ problem, isSolved, isBingoCell = false }: GridCellPro
                 `} />
             </div>
 
-            {/* state label at bottom */}
+            {/* Click to solve hint */}
             <div className="absolute bottom-2 sm:bottom-3 left-0 right-0 flex justify-center z-20">
                 {isSolved ? (
                     <span className="font-ui text-[8px] sm:text-[9px] uppercase tracking-[0.3em] sm:tracking-[0.4em] text-black font-bold">
                         [ SOLVED ]
                     </span>
                 ) : (
-                    <span className="font-ui text-[8px] sm:text-[9px] uppercase tracking-[0.3em] sm:tracking-[0.4em] text-white/20">
-                        [ PENDING ]
+                    <span className="font-ui text-[8px] sm:text-[9px] uppercase tracking-[0.3em] sm:tracking-[0.4em] text-white/20 group-hover:text-white/40">
+                        [ CLICK TO SOLVE ]
                     </span>
                 )}
             </div>
