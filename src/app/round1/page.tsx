@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { GridCell } from '@/components/GridCell';
 import { SyncButton } from '@/components/SyncButton';
 import type { IProblem } from '@/types';
+import { useRouter } from 'next/navigation';
 
 interface GameData {
   id: string;
@@ -18,11 +19,14 @@ interface Progress {
 }
 
 export default function Round1Page() {
+  const router = useRouter();
   const [game, setGame] = useState<GameData | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [error, setError] = useState('');
+  const [teamName, setTeamName] = useState<string>('');
+
 
   useEffect(() => {
     const loadGameData = async () => {
@@ -36,6 +40,7 @@ export default function Round1Page() {
 
         setGame(data.game);
         setProgress(data.progress);
+        setTeamName(data.teamName || 'Team');
       } catch (err) {
         setError('Failed to load game data');
       } finally {
@@ -61,6 +66,16 @@ export default function Round1Page() {
       setError('Failed to sync with Codeforces');
     }
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/logout', { method: 'POST' });
+      router.push('/login');
+    } catch (err) {
+      console.error('Logout failed:', err);
+      router.push('/login');
+    }
+  };
 
   const getBingoIndices = useCallback((): Set<number> => {
     if (!progress?.bingoLines) return new Set();
@@ -116,14 +131,18 @@ export default function Round1Page() {
     <div className="min-h-screen bg-[#050505] text-[#F2F2F2]">
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
-        {/* Header Section */}
-        <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-6 sm:mb-8 border-b border-white/10 pb-4 sm:pb-6">
-          <div>
-            <div className="flex items-center gap-4 mb-4">
+        {/* HEADER SECTION */}
+        <header className="flex flex-col gap-8 mb-8 border-b border-white/10 pb-6">
+          <div className="grid grid-cols-3 items-center w-full">
+            <div className="flex justify-start">
               <span className="font-ui text-[10px] uppercase tracking-[0.3em] text-white/40 bg-white/5 px-3 py-1.5 border border-white/10">
                 BINGO CONTEST
               </span>
             </div>
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.6)]" />
+              <span className="font-ui text-[9px] sm:text-[10px] uppercase tracking-[0.2em] text-white/60 whitespace-nowrap">
+                {teamName}
             <h1 className="text-4xl sm:text-5xl lg:text-7xl font-sans font-black tracking-tighter uppercase mb-2 chrome-text">
               {game?.name || 'Round 1'}
             </h1>
@@ -132,16 +151,42 @@ export default function Round1Page() {
                 <span className="w-1.5 h-1.5 bg-green-500 animate-pulse rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
                 LIVE_CONTEST
               </span>
-              <span className="h-[1px] w-8 sm:w-12 bg-white/10" />
-              <span>GRID: 3×3</span>
-              <span className="h-[1px] w-8 sm:w-12 bg-white/10 hidden sm:block" />
-              <span className="hidden sm:inline">9 PROBLEMS</span>
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => router.push('/')}
+                className="font-ui text-[8px] sm:text-[9px] uppercase tracking-[0.15em] px-2.5 sm:px-3 py-1.5 border border-white/20 text-white/60 hover:border-white hover:text-white transition-colors duration-300"
+              >
+                Dashboard
+              </button>
+              <button
+                onClick={handleLogout}
+                className="font-ui text-[8px] sm:text-[9px] uppercase tracking-[0.15em] px-2.5 sm:px-3 py-1.5 border border-white/20 text-white/60 hover:border-red-500 hover:text-red-500 transition-colors duration-300"
+              >
+                Logout
+              </button>
             </div>
           </div>
-
-          <p className="font-ui text-[10px] sm:text-xs text-white/30 max-w-[280px] leading-relaxed uppercase tracking-wider">
-            Solve problems to mark cells. Complete rows, columns, or diagonals for bingo bonus points.
-          </p>
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+            <div className="flex-1">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold tracking-tighter uppercase mb-2 chrome-text">
+                {game?.name || 'Round 1'}
+              </h1>
+              <div className="flex flex-wrap items-center gap-4 font-ui text-[9px] sm:text-[10px] tracking-[0.25em] sm:tracking-[0.3em] text-white/40 uppercase">
+                <span className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-green-500 animate-pulse rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                  LIVE_CONTEST
+                </span>
+                <span className="h-[1px] w-8 sm:w-12 bg-white/10" />
+                <span>GRID: 3×3</span>
+                <span className="h-[1px] w-8 sm:w-12 bg-white/10 hidden sm:block" />
+                <span className="hidden sm:inline">9 PROBLEMS</span>
+              </div>
+            </div>
+            <p className="font-ui text-[10px] sm:text-xs text-white/30 max-w-[280px] leading-relaxed uppercase tracking-wider">
+              Solve problems to mark cells. Complete rows, columns, or diagonals for bingo bonus points.
+            </p>
+          </div>
         </header>
 
         {/* Stats Dashboard - All Aligned Left with Inset Padding */}
