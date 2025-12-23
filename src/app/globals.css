@@ -201,3 +201,14 @@ body::before {
 a, button, [role="button"] {
   cursor: none;
 }
+
+
+@layer utilities {
+  .chrome-text {
+    background: linear-gradient(to bottom, #ffffff 0%, #a1a1aa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 800; /* Force bold on the main heading */
+  }
+}

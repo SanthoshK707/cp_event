@@ -6,12 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "next lint",
     "seed": "tsx scripts/seed.ts",
-    "setup-db": "tsx scripts/setupDatabase.ts"
+    "setup": "tsx scripts/setupDatabase.ts"
   },
   "dependencies": {
     "axios": "^1.13.2",
+    "dotenv": "^17.2.3",
     "mongodb": "^7.0.0",
     "mongoose": "^9.0.2",
     "next": "16.1.0",
