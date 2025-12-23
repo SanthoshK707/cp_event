@@ -6,7 +6,7 @@
 import mongoose from 'mongoose';
 import { QuestionR2 } from '../src/models/Question'; // Adjust path if necessary
 
-const MONGODB_URI = process.env.MONGODB_URI as string;
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://cp_event:CpEvent2026@cpeventcluster.jmjmbmc.mongodb.net/cp-events?retryWrites=true&w=majority&appName=cpEventCluster';
 
 const round2Questions = [
   { gridIndex: 0, contestId: "1900", problemIndex: "B", name: "Laura and Operations", points: 10, url: 'https://codeforces.com/contest/1900/problem/B' },
