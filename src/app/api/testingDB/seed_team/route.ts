@@ -7,30 +7,40 @@ export async function POST() {
     await connectDB();
 
     const team = {
-      teamName: "Team Alpha",
-      email: "teamalpha@gmail.com",
+      teamName: "Anwesha",
+      email: "manmaychakarborty@gmail.com",
       codeforcesHandle: null,
     };
 
-    // Avoid duplicate insert
-    const exists = await Team.findOne({ email: team.email });
-    if (exists) {
-      return NextResponse.json(
-        { message: "Team already exists in DB" },
-        { status: 400 }
-      );
+    
+    const result = await Team.updateOne(
+      { email: team.email },          
+      { $setOnInsert: team },          
+      { upsert: true }
+    );
+
+    // inserted new document
+    if (result.upsertedCount === 1) {
+      return NextResponse.json({
+        message: "Team inserted successfully",
+        team,
+      });
     }
 
-    await Team.create(team);
-
+    // already existed
     return NextResponse.json({
-      message: "Team inserted successfully",
+      message: "Team already exists in DB",
       team,
     });
-  } catch (error) {
-    console.error(error);
+
+  } catch (error: any) {
+    console.error("SEED ERROR:", error.message);
+
     return NextResponse.json(
-      { message: "Failed to insert team" },
+      {
+        message: "Seeding failed",
+        error: error.message,
+      },
       { status: 500 }
     );
   }
