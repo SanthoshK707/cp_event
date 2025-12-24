@@ -17,6 +17,10 @@ export const authOptions: NextAuthOptions = {
 
   secret: process.env.NEXTAUTH_SECRET,
 
+  pages: {
+    signIn: '/login',
+  },
+
   callbacks: {
     //Allow login only if email exists in Team DB
     async signIn({ user }) {
@@ -32,6 +36,15 @@ export const authOptions: NextAuthOptions = {
         console.error("Sign-in error:", error);
         return false;
       }
+    },
+
+    // Redirect after successful sign in
+    async redirect({ url, baseUrl }) {
+      // Always redirect to round1 after sign in
+      if (url.startsWith(baseUrl)) {
+        return `${baseUrl}/round1`;
+      }
+      return baseUrl + '/round1';
     },
 
     //  Runs on login & every request (JWT creation)
