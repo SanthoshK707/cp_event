@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { GridCell } from '@/components/GridCell';
 import { SyncButton } from '@/components/SyncButton';
 import type { IProblem } from '@/types';
@@ -19,27 +18,18 @@ interface Progress {
 }
 
 export default function Round2Page() {
-  const searchParams = useSearchParams();
-  const teamId = searchParams.get('teamId');
-  
   const [game, setGame] = useState<GameData | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [error, setError] = useState('');
-  const [teamName, setTeamName] = useState<string>(''); 
+  const [teamName, setTeamName] = useState<string>('');
 
   useEffect(() => {
-    if (!teamId) {
-      setError('Team ID required');
-      setLoading(false);
-      return;
-    }
-
     const loadRound2Data = async () => {
       try {
         // Calling the dedicated Round 2 Fetch API
-        const res = await fetch(`/api/question-r2?teamId=${teamId}`);
+        const res = await fetch('/api/question-r2');
         const data = await res.json();
 
         if (!data.success) {
@@ -57,20 +47,12 @@ export default function Round2Page() {
     };
 
     loadRound2Data();
-  }, [teamId]);
+  }, []);
 
   const handleSync = useCallback(async (): Promise<void> => {
-    if (!teamId) {
-      throw new Error('Team ID required');
-    }
-
     try {
       // Calling the dedicated Round 2 Sync API
-      const res = await fetch('/api/sync-r2', { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ teamId })
-      });
+      const res = await fetch('/api/sync-r2', { method: 'POST' });
       const data = await res.json();
 
       if (data.success) {

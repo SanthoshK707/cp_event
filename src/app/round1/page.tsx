@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { GridCell } from '@/components/GridCell';
 import { SyncButton } from '@/components/SyncButton';
 import type { IProblem } from '@/types';
@@ -19,9 +18,6 @@ interface Progress {
 }
 
 export default function Round1Page() {
-  const searchParams = useSearchParams();
-  const teamId = searchParams.get('teamId');
-  
   const [game, setGame] = useState<GameData | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,15 +26,9 @@ export default function Round1Page() {
   const [teamName, setTeamName] = useState<string>('');
 
   useEffect(() => {
-    if (!teamId) {
-      setError('Team ID required');
-      setLoading(false);
-      return;
-    }
-
     const loadGameData = async () => {
       try {
-        const res = await fetch(`/api/question?teamId=${teamId}`);
+        const res = await fetch('/api/question');
         const data = await res.json();
 
         if (!data.success) {
@@ -56,19 +46,11 @@ export default function Round1Page() {
     };
 
     loadGameData();
-  }, [teamId]);
+  }, []);
 
   const handleSync = useCallback(async (): Promise<void> => {
-    if (!teamId) {
-      throw new Error('Team ID required');
-    }
-
     try {
-      const res = await fetch('/api/sync-score', { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ teamId })
-      });
+      const res = await fetch('/api/sync-score', { method: 'POST' });
       const data = await res.json();
 
       if (data.success) {

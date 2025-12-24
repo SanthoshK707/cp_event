@@ -3,24 +3,27 @@
 // ===========================================
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
 import { connectDB } from '@/lib/db';
 import { TeamScore, Question, Team } from '@/models';
 import { fetchTeamSubmissions } from '@/services/codeforcesService';
 import { calculateTeamScore } from '@/services/bingoCalculator';
 import { checkRateLimit } from '@/lib/rateLimit';
 import type { SyncResponse } from '@/types';
+import { authOptions } from '../auth/[...nextauth]/route';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { teamId } = body;
-
-    if (!teamId) {
+    const session = await getServerSession(authOptions);
+    
+    if (!session || !session.user?.teamId) {
       return NextResponse.json<SyncResponse>(
-        { success: false, error: 'Team ID required' },
-        { status: 400 }
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
       );
     }
+
+    const teamId = session.user.teamId;
 
     // Rate limiting: 5 requests per minute per team
     const identifier = teamId;
@@ -59,7 +62,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    
+
     const allQuestions = await Question.find({}).sort({ gridIndex: 1 });
     if (!allQuestions || allQuestions.length === 0) {
       return NextResponse.json<SyncResponse>(

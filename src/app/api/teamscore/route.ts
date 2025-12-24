@@ -3,23 +3,25 @@
 // ===========================================
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
 import { connectDB } from '@/lib/db';
 import { TeamScore } from '@/models';
+import { authOptions } from '../auth/[...nextauth]/route';
 
 // GET - Fetch
 export async function GET(request: NextRequest) {
   try {
-    await connectDB();
-
-    const { searchParams } = new URL(request.url);
-    const teamId = searchParams.get('teamId');
-
-    if (!teamId) {
+    const session = await getServerSession(authOptions);
+    
+    if (!session || !session.user?.teamId) {
       return NextResponse.json(
-        { success: false, error: 'Team ID required' },
-        { status: 400 }
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
       );
     }
+
+    await connectDB();
+    const teamId = session.user.teamId;
 
     const teamScore = await TeamScore.findOne({ teamId });
 

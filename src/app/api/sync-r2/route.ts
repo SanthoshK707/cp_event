@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
 import { connectDB } from '@/lib/db';
 import { QuestionR2 } from '@/models/Question';
 import { TeamScoreR2 } from '@/models/TeamScore';
@@ -7,18 +8,20 @@ import { fetchTeamSubmissions } from '@/services/codeforcesService';
 import { calculateTeamScore } from '@/services/bingoCalculator';
 import { checkRateLimit } from '@/lib/rateLimit';
 import type { SyncResponse } from '@/types';
+import { authOptions } from '../auth/[...nextauth]/route';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { teamId } = body;
-
-    if (!teamId) {
+    const session = await getServerSession(authOptions);
+    
+    if (!session || !session.user?.teamId) {
       return NextResponse.json<SyncResponse>(
-        { success: false, error: 'Team ID required' },
-        { status: 400 }
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
       );
     }
+
+    const teamId = session.user.teamId;
 
     const identifier = `${teamId}_r2`;
     const rateLimit = checkRateLimit(identifier, 5, 60000);
