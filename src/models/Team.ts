@@ -1,65 +1,39 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
-/**
+/*
  * Team Interface
  */
 export interface ITeam extends Document {
-  teamId: string;
-  name: string;
   teamName: string;
   email: string;
-  members: string[];
-  codeforcesHandle: string | null;
-  lastSync: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
+  codeforcesHandle?: string | null;
 }
 
-/**
+/*
  * Team Schema
  */
-const TeamSchema: Schema<ITeam> = new Schema(
-  {
-    teamId: { 
-      type: String, 
-      required: true, 
-      unique: true 
-    },
-    name: { 
-      type: String, 
-      required: true, 
-      unique: true,
-      trim: true 
-    },
-    teamName: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-    },
-    members: [{ 
-      type: String, 
-      required: true 
-    }],
-    codeforcesHandle: { 
-      type: String, 
-      default: null,
-      trim: true 
-    },
-    lastSync: { 
-      type: Date, 
-      default: null 
-    },
+const TeamSchema: Schema<ITeam> = new Schema({
+  teamName: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
   },
-  {
-    timestamps: true,
-  }
-);
+
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+  },
+
+  // Will be set only the first time
+  codeforcesHandle: {
+    type: String,
+    default: null,
+    trim: true,
+  },
+});
 
 /**
  * Team Model

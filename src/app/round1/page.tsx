@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { GridCell } from '@/components/GridCell';
 import { SyncButton } from '@/components/SyncButton';
 import type { IProblem } from '@/types';
@@ -18,19 +19,26 @@ interface Progress {
 }
 
 export default function Round1Page() {
+  const searchParams = useSearchParams();
+  const teamId = searchParams.get('teamId');
+  
   const [game, setGame] = useState<GameData | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [error, setError] = useState('');
-  
-  // Placeholder team name
-  const teamName = "Team CodeMasters";
+  const [teamName, setTeamName] = useState<string>('');
 
   useEffect(() => {
+    if (!teamId) {
+      setError('Team ID required');
+      setLoading(false);
+      return;
+    }
+
     const loadGameData = async () => {
       try {
-        const res = await fetch('/api/question');
+        const res = await fetch(`/api/question?teamId=${teamId}`);
         const data = await res.json();
 
         if (!data.success) {
@@ -39,6 +47,7 @@ export default function Round1Page() {
 
         setGame(data.game);
         setProgress(data.progress);
+        setTeamName(data.teamName || 'Unknown Team');
       } catch (err) {
         setError('Failed to load game data');
       } finally {
@@ -47,11 +56,19 @@ export default function Round1Page() {
     };
 
     loadGameData();
-  }, []);
+  }, [teamId]);
 
   const handleSync = useCallback(async (): Promise<void> => {
+    if (!teamId) {
+      throw new Error('Team ID required');
+    }
+
     try {
-      const res = await fetch('/api/sync-score', { method: 'POST' });
+      const res = await fetch('/api/sync-score', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamId })
+      });
       const data = await res.json();
 
       if (data.success) {

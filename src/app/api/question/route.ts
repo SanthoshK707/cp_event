@@ -4,12 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
-import { Question, TeamScore } from '@/models';
-
-// import { getServerSession } from 'next-auth';
-// import { authOptions } from '@/lib/authOptions';
-
-const DUMMY_TEAM_ID = 'test-team-123';
+import { Question, TeamScore, Team } from '@/models';
 
 function shuffleArray(array: any[]) {
   const shuffled = [...array];
@@ -25,21 +20,22 @@ export async function GET(request: NextRequest) {
     await connectDB();
 
     const { searchParams } = new URL(request.url);
-    const teamId = searchParams.get('teamId') || DUMMY_TEAM_ID;
+    const teamId = searchParams.get('teamId');
 
-// export async function GET(request: NextRequest) {
-//   try {
-//     const session = await getServerSession(authOptions);
-//     if (!session || !session.user?.teamId) {
-//       return NextResponse.json(
-//         { success: false, error: 'Unauthorized' },
-//         { status: 401 }
-//       );
-//     }
+    if (!teamId) {
+      return NextResponse.json(
+        { success: false, error: 'Team ID required' },
+        { status: 400 }
+      );
+    }
 
-//     await connectDB();
-
-//     const teamId = session.user.teamId;
+    const team = await Team.findById(teamId);
+    if (!team) {
+      return NextResponse.json(
+        { success: false, error: 'Team not found' },
+        { status: 404 }
+      );
+    }
 
     const allQuestions = await Question.find({}).sort({ gridIndex: 1 });
     if (!allQuestions || allQuestions.length === 0) {
@@ -84,6 +80,7 @@ export async function GET(request: NextRequest) {
         currentScore: teamScore.currentScore,
         bingoLines: teamScore.bingoLines,
       },
+      teamName: team.teamName,
     });
   } catch (error) {
     console.error('Question API error:', error);

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { GridCell } from '@/components/GridCell';
 import { SyncButton } from '@/components/SyncButton';
 import type { IProblem } from '@/types';
@@ -18,20 +19,27 @@ interface Progress {
 }
 
 export default function Round2Page() {
+  const searchParams = useSearchParams();
+  const teamId = searchParams.get('teamId');
+  
   const [game, setGame] = useState<GameData | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [error, setError] = useState('');
-  
-  // Team name context
-  const teamName = "Team CodeMasters"; 
+  const [teamName, setTeamName] = useState<string>(''); 
 
   useEffect(() => {
+    if (!teamId) {
+      setError('Team ID required');
+      setLoading(false);
+      return;
+    }
+
     const loadRound2Data = async () => {
       try {
         // Calling the dedicated Round 2 Fetch API
-        const res = await fetch('/api/question-r2');
+        const res = await fetch(`/api/question-r2?teamId=${teamId}`);
         const data = await res.json();
 
         if (!data.success) {
@@ -40,6 +48,7 @@ export default function Round2Page() {
 
         setGame(data.game);
         setProgress(data.progress);
+        setTeamName(data.teamName || 'Unknown Team');
       } catch (err) {
         setError('Failed to load Round 2 game data');
       } finally {
@@ -48,12 +57,20 @@ export default function Round2Page() {
     };
 
     loadRound2Data();
-  }, []);
+  }, [teamId]);
 
   const handleSync = useCallback(async (): Promise<void> => {
+    if (!teamId) {
+      throw new Error('Team ID required');
+    }
+
     try {
       // Calling the dedicated Round 2 Sync API
-      const res = await fetch('/api/sync-r2', { method: 'POST' });
+      const res = await fetch('/api/sync-r2', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamId })
+      });
       const data = await res.json();
 
       if (data.success) {
