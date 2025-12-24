@@ -18,7 +18,7 @@ const handler = NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
 
   callbacks: {
-    // 1️⃣ Allow login only if email exists in Team DB
+    //Allow login only if email exists in Team DB
     async signIn({ user }) {
       try {
         await connectDB();
@@ -34,7 +34,7 @@ const handler = NextAuth({
       }
     },
 
-    // 2️⃣ Runs on login & every request (JWT creation)
+    //  Runs on login & every request (JWT creation)
     async jwt({ token }) {
       if (!token.email) return token;
 
@@ -48,7 +48,7 @@ const handler = NextAuth({
       return token;
     },
 
-    // 3️⃣ Expose value to frontend session
+    // Expose value to frontend session
     async session({ session, token }) {
       if (session.user) {
         session.user.setCodeforcesHandle =
