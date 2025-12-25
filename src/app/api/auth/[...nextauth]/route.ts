@@ -1,9 +1,9 @@
-import NextAuth from "next-auth";
+import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { connectDB } from "@/lib/db";
 import Team from "@/models/Team";
 
-const handler = NextAuth({
+export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -16,6 +16,10 @@ const handler = NextAuth({
   },
 
   secret: process.env.NEXTAUTH_SECRET,
+
+  pages: {
+    signIn: '/login',
+  },
 
   callbacks: {
     //Allow login only if email exists in Team DB
@@ -34,6 +38,15 @@ const handler = NextAuth({
       }
     },
 
+    // Redirect after successful sign in
+    async redirect({ url, baseUrl }) {
+      // Always redirect to round1 after sign in
+      if (url.startsWith(baseUrl)) {
+        return `${baseUrl}/round1`;
+      }
+      return baseUrl + '/round1';
+    },
+
     //  Runs on login & every request (JWT creation)
     async jwt({ token }) {
       if (!token.email) return token;
@@ -42,8 +55,12 @@ const handler = NextAuth({
 
       const team = await Team.findOne({ email: token.email });
 
-      // if team exists, check codeforcesHandle
-      token.setCodeforcesHandle = team?.codeforcesHandle == null;
+      if (team) {
+        // Store teamId in token
+        token.teamId = team._id.toString();
+        // if team exists, check codeforcesHandle
+        token.setCodeforcesHandle = team.codeforcesHandle == null;
+      }
 
       return token;
     },
@@ -53,11 +70,14 @@ const handler = NextAuth({
       if (session.user) {
         session.user.setCodeforcesHandle =
           token.setCodeforcesHandle as boolean;
+        session.user.teamId = token.teamId as string;
       }
 
       return session;
     },
   },
-});
+};
+
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };

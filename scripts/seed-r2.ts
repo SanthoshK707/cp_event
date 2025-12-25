@@ -3,8 +3,12 @@
 // Run with: npx ts-node scripts/seed-r2.ts
 // ===========================================
 
+import dotenv from 'dotenv';
+import { resolve } from 'path';
 import mongoose from 'mongoose';
-import { QuestionR2 } from '../src/models/Question'; // Adjust path if necessary
+import { QuestionR2 } from '../src/models/Question';
+
+dotenv.config({ path: resolve(__dirname, '../.env.local') });
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://cp_event:CpEvent2026@cpeventcluster.jmjmbmc.mongodb.net/cp-events';
 
@@ -26,11 +30,9 @@ async function seedR2() {
     await mongoose.connect(MONGODB_URI);
     console.log('Connected to MongoDB');
 
-    // IMPORTANT: Only clear Round 2 questions
     await QuestionR2.deleteMany({});
     console.log('Cleared existing Round 2 questions');
 
-    // Insert Round 2 questions
     const questions = await QuestionR2.insertMany(round2Questions);
     console.log(`Inserted ${questions.length} Round 2 questions into questions_r2 collection`);
 

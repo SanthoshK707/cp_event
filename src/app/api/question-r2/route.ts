@@ -1,14 +1,12 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
 import { connectDB } from '@/lib/db';
 import { QuestionR2 } from '@/models/Question';
 import { TeamScoreR2 } from '@/models/TeamScore';
-
-// import { getServerSession } from 'next-auth';
-// import { authOptions } from '@/lib/authOptions';
-
-const DUMMY_TEAM_ID = 'test-team-123';
+import { Team } from '@/models';
+import { authOptions } from '../auth/[...nextauth]/route';
 
 function shuffleArray(array: any[]) {
   const shuffled = [...array];
@@ -21,23 +19,24 @@ function shuffleArray(array: any[]) {
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session || !session.user?.teamId) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     await connectDB();
-
-    const { searchParams } = new URL(request.url);
-    const teamId = searchParams.get('teamId') || DUMMY_TEAM_ID;
-
-// export async function GET(request: NextRequest) {
-//   try {
-//     const session = await getServerSession(authOptions);
-//     if (!session || !session.user?.teamId) {
-//       return NextResponse.json(
-//         { success: false, error: 'Unauthorized' },
-//         { status: 401 }
-//       );
-//     }
-//     await connectDB();
-//     const teamId = session.user.teamId;
-
+    const teamId = session.user.teamId;
+    const team = await Team.findById(teamId);
+    if (!team) {
+      return NextResponse.json(
+        { success: false, error: 'Team not found' },
+        { status: 404 }
+      );
+    }
     const allQuestions = await QuestionR2.find({}).sort({ gridIndex: 1 });
     if (!allQuestions || allQuestions.length === 0) {
       return NextResponse.json(
@@ -81,6 +80,7 @@ export async function GET(request: NextRequest) {
         currentScore: teamScore.currentScore,
         bingoLines: teamScore.bingoLines,
       },
+      teamName: team.teamName,
     });
   } catch (error) {
     console.error('Question API Round 2 error:', error);

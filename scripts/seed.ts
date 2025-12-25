@@ -3,10 +3,14 @@
 // Run with: npm run seed
 // ===========================================
 
+import dotenv from 'dotenv';
+import { resolve } from 'path';
 import mongoose from 'mongoose';
 import { Question } from '../src/models';
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://cp_event:CpEvent2026@cpeventcluster.jmjmbmc.mongodb.net/cp-events';
+dotenv.config({ path: resolve(__dirname, '../.env.local') });
+
+const MONGODB_URI = process.env.MONGODB_URI as string;
 
 const round1Questions = [
   { gridIndex: 0, contestId: '1928', problemIndex: 'A', name: 'Rectangle Cutting', points: 10, url: 'https://codeforces.com/contest/1928/problem/A' },
@@ -26,11 +30,9 @@ async function seed() {
     await mongoose.connect(MONGODB_URI);
     console.log('Connected to MongoDB');
 
-    // Clear existing questions
     await Question.deleteMany({});
     console.log('Cleared existing questions');
 
-    // Insert new questions
     const questions = await Question.insertMany(round1Questions);
     console.log(`Inserted ${questions.length} questions`);
 

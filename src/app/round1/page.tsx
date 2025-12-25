@@ -23,9 +23,7 @@ export default function Round1Page() {
   const [loading, setLoading] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [error, setError] = useState('');
-  
-  // Placeholder team name
-  const teamName = "Team CodeMasters";
+  const [teamName, setTeamName] = useState<string>('');
 
   useEffect(() => {
     const loadGameData = async () => {
@@ -39,6 +37,7 @@ export default function Round1Page() {
 
         setGame(data.game);
         setProgress(data.progress);
+        setTeamName(data.teamName || 'Unknown Team');
       } catch (err) {
         setError('Failed to load game data');
       } finally {

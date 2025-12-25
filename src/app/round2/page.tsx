@@ -23,9 +23,7 @@ export default function Round2Page() {
   const [loading, setLoading] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [error, setError] = useState('');
-  
-  // Team name context
-  const teamName = "Team CodeMasters"; 
+  const [teamName, setTeamName] = useState<string>('');
 
   useEffect(() => {
     const loadRound2Data = async () => {
@@ -40,6 +38,7 @@ export default function Round2Page() {
 
         setGame(data.game);
         setProgress(data.progress);
+        setTeamName(data.teamName || 'Unknown Team');
       } catch (err) {
         setError('Failed to load Round 2 game data');
       } finally {

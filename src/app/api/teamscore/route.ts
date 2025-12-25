@@ -3,38 +3,27 @@
 // ===========================================
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
 import { connectDB } from '@/lib/db';
 import { TeamScore } from '@/models';
-
-// import { getServerSession } from 'next-auth';
-// import { authOptions } from '@/lib/authOptions';
-
-const DUMMY_TEAM_ID = 'test-team-123';
+import { authOptions } from '../auth/[...nextauth]/route';
 
 // GET - Fetch
 export async function GET(request: NextRequest) {
   try {
-    await connectDB();
+    const session = await getServerSession(authOptions);
+    
+    if (!session || !session.user?.teamId) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
 
-    const { searchParams } = new URL(request.url);
-    const teamId = searchParams.get('teamId') || DUMMY_TEAM_ID;
+    await connectDB();
+    const teamId = session.user.teamId;
 
     const teamScore = await TeamScore.findOne({ teamId });
-
-// export async function GET(request: NextRequest) {
-//   try {
-//     const session = await getServerSession(authOptions);
-//     if (!session || !session.user?.teamId) {
-//       return NextResponse.json(
-//         { success: false, error: 'Unauthorized' },
-//         { status: 401 }
-//       );
-//     }
-//
-//     await connectDB();
-//
-//     const teamId = session.user.teamId;
-//     const teamScore = await TeamScore.findOne({ teamId });
 
     if (!teamScore) {
       return NextResponse.json({
@@ -70,25 +59,22 @@ export async function GET(request: NextRequest) {
 // POST - Update
 export async function POST(request: NextRequest) {
   try {
-
-    // const session = await getServerSession(authOptions);
-    // if (!session || !session.user?.teamId) {
-    //   return NextResponse.json(
-    //     { success: false, error: 'Unauthorized' },
-    //     { status: 401 }
-    //   );
-    // }
-
     await connectDB();
 
     const body = await request.json();
     const {
-      teamId = DUMMY_TEAM_ID,
-      // teamId = session.user.teamId,
+      teamId,
       solvedIndices = [],
       currentScore = 0,
       bingoLines = [],
     } = body;
+
+    if (!teamId) {
+      return NextResponse.json(
+        { success: false, error: 'Team ID required' },
+        { status: 400 }
+      );
+    }
 
     const teamScore = await TeamScore.findOneAndUpdate(
       { teamId },
