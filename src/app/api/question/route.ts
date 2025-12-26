@@ -46,28 +46,35 @@ export async function GET(request: NextRequest) {
         { status: 404 }
       );
     }
+    const randomOrder = shuffleArray([0, 1, 2, 3, 4, 5, 6, 7, 8]);
 
-    let teamScore = await TeamScore.findOne({ teamId });
+    const teamScore = await TeamScore.findOneAndUpdate(
+      { teamId },
+      {
+        $setOnInsert: {
+          teamId,
+          questionOrder: randomOrder,
+          solvedIndices: [],
+          currentScore: 0,
+          bingoLines: [],
+        },
+      },
+      {
+        new: true,   // return existing or newly inserted doc
+        upsert: true // insert if not exists
+      }
+    );
 
-    if (!teamScore) {
-      const randomOrder = shuffleArray([0, 1, 2, 3, 4, 5, 6, 7, 8]);
-      teamScore = await TeamScore.create({
-        teamId,
-        questionOrder: randomOrder,
-        solvedIndices: [],
-        currentScore: 0,
-        bingoLines: [],
-      });
-    }
-
-    const teamQuestions = teamScore.questionOrder.map((originalIndex: number, gridPosition: number) => {
-      const question = allQuestions[originalIndex];
-      return {
-        ...question.toObject(),
-        gridIndex: gridPosition,
-        originalIndex,
-      };
-    });
+    const teamQuestions = teamScore.questionOrder.map(
+      (originalIndex: number, gridPosition: number) => {
+        const question = allQuestions[originalIndex];
+        return {
+          ...question.toObject(),
+          gridIndex: gridPosition,
+          originalIndex,
+        };
+      }
+    );
 
     const gameData = {
       name: 'Round 1',
