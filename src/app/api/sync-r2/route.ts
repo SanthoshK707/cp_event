@@ -13,11 +13,18 @@ import { authOptions } from '../auth/[...nextauth]/route';
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session || !session.user?.teamId) {
       return NextResponse.json<SyncResponse>(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
+      );
+    }
+    
+    if (!session.user?.hasRound2Access) {
+      return NextResponse.json<SyncResponse>(
+        { success: false, error: 'Access denied to Round 2' },
+        { status: 403 }
       );
     }
 
@@ -25,12 +32,12 @@ export async function POST(request: NextRequest) {
 
     const identifier = `${teamId}_r2`;
     const rateLimit = checkRateLimit(identifier, 5, 60000);
-    
+
     if (rateLimit.limited) {
       const resetIn = Math.ceil((rateLimit.resetTime - Date.now()) / 1000);
       return NextResponse.json<SyncResponse>(
         { success: false, error: `Rate limit exceeded. Try again in ${resetIn} seconds.` },
-        { 
+        {
           status: 429,
           headers: {
             'X-RateLimit-Limit': '5',
@@ -75,14 +82,14 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    
+
     const teamQuestions = teamScore.questionOrder.map((originalIndex: number, gridPosition: number) => {
       const question = allQuestions[originalIndex];
       return { ...question.toObject(), gridIndex: gridPosition };
     });
 
     const submissionsResult = await fetchTeamSubmissions([cfHandle]);
-    
+
     if (!submissionsResult.success) {
       return NextResponse.json<SyncResponse>(
         { success: false, error: submissionsResult.error },

@@ -22,7 +22,6 @@ export const authOptions: NextAuthOptions = {
   },
 
   callbacks: {
-    //Allow login only if email exists in Team DB
     async signIn({ user }) {
       try {
         await connectDB();
@@ -38,39 +37,45 @@ export const authOptions: NextAuthOptions = {
       }
     },
 
-    // Redirect after successful sign in
     async redirect({ url, baseUrl }) {
-      // Always redirect to round1 after sign in
+      if (url === baseUrl || url === `${baseUrl}/`) {
+        return baseUrl;
+      }
+
       if (url.startsWith(baseUrl)) {
         return `${baseUrl}/round1`;
       }
+
+      console.warn(`[Security] External redirect attempt blocked: ${url}`);
       return baseUrl + '/round1';
     },
 
-    //  Runs on login & every request (JWT creation)
-    async jwt({ token }) {
-      if (!token.email) return token;
+    async jwt({ token, trigger }) {
+      if (trigger === 'signIn' || trigger === 'update' || !token.teamId) {
+        if (!token.email) return token;
 
-      await connectDB();
+        await connectDB();
 
-      const team = await Team.findOne({ email: token.email });
+        const team = await Team.findOne({ email: token.email });
 
-      if (team) {
-        // Store teamId in token
-        token.teamId = team._id.toString();
-        // if team exists, check codeforcesHandle
-        token.setCodeforcesHandle = team.codeforcesHandle == null;
+        if (team) {
+          token.teamId = team._id.toString();
+          token.teamName = team.teamName;
+          token.hasRound2Access = team.hasRound2Access || false;
+          token.setCodeforcesHandle = team.codeforcesHandle == null;
+        }
       }
 
       return token;
     },
 
-    // Expose value to frontend session
     async session({ session, token }) {
       if (session.user) {
         session.user.setCodeforcesHandle =
           token.setCodeforcesHandle as boolean;
         session.user.teamId = token.teamId as string;
+        session.user.name = token.teamName as string;
+        session.user.hasRound2Access = token.hasRound2Access as boolean;
       }
 
       return session;

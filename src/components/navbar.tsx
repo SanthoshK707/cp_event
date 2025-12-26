@@ -1,11 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 export function Navbar() {
   const { data: session, status } = useSession();
+  const pathname = usePathname();
+  
+  const isRound2 = pathname?.includes('/round2') || pathname?.includes('/leaderboard-r2');
 
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -21,14 +25,14 @@ export function Navbar() {
             {status === "loading" ? (
               <span className="text-sm text-muted-foreground">Loading...</span>
             ) : session ? (
-              <>
-                <span className="text-sm text-foreground">
-                  {session.user?.email}
+              <div className="flex items-center gap-2">
+                {isRound2 && (
+                  <div className="w-1.5 h-1.5 bg-purple-400 rounded-full shadow-[0_0_8px_rgba(192,132,252,0.6)]" />
+                )}
+                <span className={`text-xl font-bold text-foreground ${isRound2 ? 'text-purple-300' : 'text-foreground'}`}>
+                  {session.user?.name || 'Team'}
                 </span>
-                <Button onClick={() => signOut()} variant="outline">
-                  Sign out
-                </Button>
-              </>
+              </div>
             ) : (
               <Link href="/login">
                 <Button>Login</Button>

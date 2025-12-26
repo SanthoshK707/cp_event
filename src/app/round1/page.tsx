@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 import { GridCell } from '@/components/GridCell';
 import { SyncButton } from '@/components/SyncButton';
 import type { IProblem } from '@/types';
@@ -18,12 +19,15 @@ interface Progress {
 }
 
 export default function Round1Page() {
+  const { data: session } = useSession();
   const [game, setGame] = useState<GameData | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [error, setError] = useState('');
   const [teamName, setTeamName] = useState<string>('');
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const hasRound2Access = session?.user?.hasRound2Access || false;
 
   useEffect(() => {
     const loadGameData = async () => {
@@ -64,6 +68,22 @@ export default function Round1Page() {
     }
   }, []);
 
+  const handleRound2Click = () => {
+    if (hasRound2Access) {
+      window.location.href = '/round2';
+    } else {
+      alert('You are not granted access to this round');
+    }
+  };
+
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
+  };
+
+  const handleConfirmLogout = async () => {
+    await signOut({ callbackUrl: '/' });
+  };
+
   const getBingoIndices = useCallback((): Set<number> => {
     if (!progress?.bingoLines) return new Set();
     const indices = new Set<number>();
@@ -102,13 +122,6 @@ export default function Round1Page() {
         {/* Header Section */}
         <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-6 sm:mb-8 border-b border-white/10 pb-4 sm:pb-6">
           <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.6)]" />
-              <span className="font-ui text-[9px] sm:text-[10px] uppercase tracking-[0.2em] text-white/60 whitespace-nowrap">
-                {teamName}
-              </span>
-            </div>
-
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-sans font-black tracking-tighter uppercase mb-2 chrome-text">
               {game?.name || 'Round 1'}
             </h1>
@@ -128,13 +141,19 @@ export default function Round1Page() {
           <div className="flex flex-col items-start lg:items-end gap-4">
             <div className="flex items-center gap-3">
               <button 
-                onClick={() => window.location.href = '/'}
+                onClick={() => window.location.href = '/leaderboard'}
                 className="px-4 py-2 border border-white/10 bg-white/5 hover:bg-white/10 text-white font-ui text-[10px] uppercase tracking-widest transition-all rounded-lg"
               >
-                Dashboard
+                Leaderboard
               </button>
               <button 
-                onClick={() => window.location.href = '/login'}
+                onClick={handleRound2Click}
+                className="px-4 py-2 border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 font-ui text-[10px] uppercase tracking-widest transition-all rounded-lg"
+              >
+                Advance to Round 2 →
+              </button>
+              <button 
+                onClick={handleLogoutClick}
                 className="px-4 py-2 border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-400 font-ui text-[10px] uppercase tracking-widest transition-all rounded-lg"
               >
                 Logout
@@ -271,6 +290,34 @@ export default function Round1Page() {
           <p className="font-ui text-[10px] uppercase tracking-[0.2em] text-white/20">Round 1 — Active</p>
         </div>
       </footer>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#0b0b0b] border border-white/10 rounded-2xl p-8 max-w-md w-full mx-4 shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
+            <h2 className="text-2xl font-sans font-black tracking-tighter uppercase mb-4 text-white">
+              Confirm Sign Out
+            </h2>
+            <p className="font-ui text-sm text-white/60 mb-8 uppercase tracking-wider">
+              Are you sure you want to sign out? You will be redirected to the home page.
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 px-6 py-3 border border-white/10 bg-white/5 hover:bg-white/10 text-white font-ui text-[10px] uppercase tracking-widest transition-all rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmLogout}
+                className="flex-1 px-6 py-3 border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-ui text-[10px] uppercase tracking-widest transition-all rounded-lg"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

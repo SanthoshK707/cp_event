@@ -12,27 +12,30 @@ dotenv.config({ path: resolve(__dirname, '../.env.local') });
 
 const MONGODB_URI = process.env.MONGODB_URI as string;
 
-// Sample teams for onboarding
 const sampleTeams = [
   {
     teamName: "Team Alpha",
-    email: "alpha@example.com",
+    email: "vt.gowreesh43@gmail.com",
     codeforcesHandle: "gowreesh",
+    hasRound2Access: true,
   },
   {
     teamName: "Team Beta",
-    email: "beta@example.com",
-    codeforcesHandle: "Geothermal",
+    email: "gowreesh4343@gmail.com",
+    codeforcesHandle: "gowreesh43",
+    hasRound2Access: false,
   },
   {
     teamName: "Team Gamma",
     email: "gamma@example.com",
-    codeforcesHandle: "gowreesh43",
+    codeforcesHandle: "Geothermal",
+    hasRound2Access: false,
   },
   {
-    teamName: "Solo Player",
-    email: "solo@example.com",
-    codeforcesHandle: "iammanay",
+    teamName: "Gouse Moideen",
+    email: "gousemoideen1@gmail.com",
+    codeforcesHandle: "Gouse_moideen",
+    hasRound2Access: true,
   },
 ];
 

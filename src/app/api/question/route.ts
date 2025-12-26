@@ -20,7 +20,7 @@ function shuffleArray(array: any[]) {
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session || !session.user?.teamId) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     }
 
     let teamScore = await TeamScore.findOne({ teamId });
-    
+
     if (!teamScore) {
       const randomOrder = shuffleArray([0, 1, 2, 3, 4, 5, 6, 7, 8]);
       teamScore = await TeamScore.create({

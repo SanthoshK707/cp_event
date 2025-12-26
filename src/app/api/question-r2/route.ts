@@ -20,11 +20,18 @@ function shuffleArray(array: any[]) {
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session || !session.user?.teamId) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
+      );
+    }
+
+    if (!session.user?.hasRound2Access) {
+      return NextResponse.json(
+        { success: false, error: 'Access denied to Round 2' },
+        { status: 403 }
       );
     }
 
@@ -46,7 +53,7 @@ export async function GET(request: NextRequest) {
     }
 
     let teamScore = await TeamScoreR2.findOne({ teamId });
-    
+
     if (!teamScore) {
       const randomOrder = shuffleArray([0, 1, 2, 3, 4, 5, 6, 7, 8]);
       teamScore = await TeamScoreR2.create({

@@ -1,9 +1,14 @@
+'use client';
+
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trophy, Award, Medal } from "lucide-react";
 
 export default function Landing_Page() {
+  const { data: session } = useSession();
+  
   // Dummy prizes data
   const prizes = [
     {
@@ -83,7 +88,7 @@ export default function Landing_Page() {
 
             {/* Hero Actions Section */}
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link href="/login">
+              <Link href={session ? "/round1" : "/login"}>
                 <Button size="lg" className="w-full sm:w-auto">
                   Get Started
                 </Button>

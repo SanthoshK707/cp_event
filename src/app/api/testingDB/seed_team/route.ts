@@ -12,14 +12,13 @@ export async function POST() {
       codeforcesHandle: null,
     };
 
-    
+
     const result = await Team.updateOne(
-      { email: team.email },          
-      { $setOnInsert: team },          
+      { email: team.email },
+      { $setOnInsert: team },
       { upsert: true }
     );
 
-    // inserted new document
     if (result.upsertedCount === 1) {
       return NextResponse.json({
         message: "Team inserted successfully",
@@ -27,7 +26,6 @@ export async function POST() {
       });
     }
 
-    // already existed
     return NextResponse.json({
       message: "Team already exists in DB",
       team,

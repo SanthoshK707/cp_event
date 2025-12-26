@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { GridCell } from '@/components/GridCell';
 import { SyncButton } from '@/components/SyncButton';
 import type { IProblem } from '@/types';
@@ -18,17 +20,27 @@ interface Progress {
 }
 
 export default function Round2Page() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [game, setGame] = useState<GameData | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [error, setError] = useState('');
   const [teamName, setTeamName] = useState<string>('');
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  useEffect(() => {
+    if (status === 'loading') return;
+    
+    if (!session || !session.user?.hasRound2Access) {
+      router.push('/round1');
+    }
+  }, [session, status, router]);
 
   useEffect(() => {
     const loadRound2Data = async () => {
       try {
-        // Calling the dedicated Round 2 Fetch API
         const res = await fetch('/api/question-r2');
         const data = await res.json();
 
@@ -49,9 +61,16 @@ export default function Round2Page() {
     loadRound2Data();
   }, []);
 
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
+  };
+
+  const handleConfirmLogout = async () => {
+    await signOut({ callbackUrl: '/' });
+  };
+
   const handleSync = useCallback(async (): Promise<void> => {
     try {
-      // Calling the dedicated Round 2 Sync API
       const res = await fetch('/api/sync-r2', { method: 'POST' });
       const data = await res.json();
 
@@ -104,20 +123,13 @@ export default function Round2Page() {
         {/* Header Section - Same UI, Different Logic */}
         <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-6 sm:mb-8 border-b border-white/10 pb-4 sm:pb-6">
           <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.6)]" />
-              <span className="font-ui text-[9px] sm:text-[10px] uppercase tracking-[0.2em] text-white/60 whitespace-nowrap">
-                {teamName}
-              </span>
-            </div>
-
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-sans font-black tracking-tighter uppercase mb-2 chrome-text">
               {game?.name || 'Round 2'}
             </h1>
 
-            <div className="flex flex-wrap items-center gap-4 font-ui text-[9px] sm:text-[10px] tracking-[0.25em] sm:tracking-[0.3em] text-white/40 uppercase">
+            <div className="flex flex-wrap items-center gap-4 font-ui text-[9px] sm:text-[10px] tracking-[0.25em] sm:tracking-[0.3em] text-purple-300/40 uppercase">
               <span className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 bg-green-500 animate-pulse rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                <span className="w-1.5 h-1.5 bg-purple-500 animate-pulse rounded-full shadow-[0_0_8px_rgba(168,85,247,0.6)]" />
                 ELITE_CONTEST
               </span>
               <span className="h-[1px] w-8 sm:w-12 bg-white/10" />
@@ -128,13 +140,13 @@ export default function Round2Page() {
           <div className="flex flex-col items-start lg:items-end gap-4">
             <div className="flex items-center gap-3">
               <button 
-                onClick={() => window.location.href = '/'}
-                className="px-4 py-2 border border-white/10 bg-white/5 hover:bg-white/10 text-white font-ui text-[10px] uppercase tracking-widest transition-all rounded-lg"
+                onClick={() => window.location.href = '/leaderboard-r2'}
+                className="px-4 py-2 border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 font-ui text-[10px] uppercase tracking-widest transition-all rounded-lg"
               >
-                Dashboard
+                Leaderboard
               </button>
               <button 
-                onClick={() => window.location.href = '/login'}
+                onClick={handleLogoutClick}
                 className="px-4 py-2 border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-400 font-ui text-[10px] uppercase tracking-widest transition-all rounded-lg"
               >
                 Logout
@@ -148,7 +160,7 @@ export default function Round2Page() {
 
         {/* Stats Dashboard - Connecting to ProgressR2 */}
         <section className="flex justify-center mb-12 sm:mb-16">
-          <div className="flex w-full max-w-md sm:max-w-3xl bg-[#0b0b0b] rounded-3xl border border-white/10 overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
+          <div className="flex w-full max-w-md sm:max-w-3xl bg-[#0b0b0b] rounded-3xl border border-purple-500/20 overflow-hidden shadow-[0_10px_40px_rgba(168,85,247,0.1)]">
             
             <div className="flex-1 min-w-0 py-4 sm:py-6 flex flex-col group hover:bg-white/5 transition-all pl-6 sm:pl-10">
               <p className="font-ui text-[9px] sm:text-[10px] uppercase tracking-[0.25em] text-white/40 mb-1 text-left">Total Score</p>
@@ -187,7 +199,7 @@ export default function Round2Page() {
         </section>
 
         {/* Grid Container */}
-        <div className="grid grid-cols-3 gap-0 border border-white/10 mb-6 sm:mb-8 shadow-[0_0_60px_rgba(255,255,255,0.03)]">
+        <div className="grid grid-cols-3 gap-0 border border-purple-500/20 mb-6 sm:mb-8 shadow-[0_0_60px_rgba(168,85,247,0.08)]">
           {game?.problems
             .sort((a, b) => a.gridIndex - b.gridIndex)
             .map((problem) => (
@@ -224,9 +236,9 @@ export default function Round2Page() {
             <div className="space-y-4 font-ui">
               <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-white/80">System Status</p>
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-white/40 text-[10px] uppercase">
-                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />
-                  Contest Active
+                <div className="flex items-center gap-2 text-purple-300/40 text-[10px] uppercase">
+                  <div className="w-1.5 h-1.5 bg-purple-500 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.6)] animate-pulse" />
+                  Elite Contest Active
                 </div>
                 {lastSyncTime && (
                   <p className="text-white/20 text-[10px] uppercase">
@@ -265,6 +277,34 @@ export default function Round2Page() {
           <p className="font-ui text-[10px] uppercase tracking-[0.2em] text-white/20">Round 2 — Active</p>
         </div>
       </footer>
+
+      {/* Logout Confirmation Modal - Purple Theme */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#0b0b0b] border border-purple-500/30 rounded-2xl p-8 max-w-md w-full mx-4 shadow-[0_20px_60px_rgba(168,85,247,0.2)]">
+            <h2 className="text-2xl font-sans font-black tracking-tighter uppercase mb-4 text-white">
+              Confirm Sign Out
+            </h2>
+            <p className="font-ui text-sm text-white/60 mb-8 uppercase tracking-wider">
+              Are you sure you want to sign out? You will be redirected to the home page.
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 px-6 py-3 border border-white/10 bg-white/5 hover:bg-white/10 text-white font-ui text-[10px] uppercase tracking-widest transition-all rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmLogout}
+                className="flex-1 px-6 py-3 border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 font-ui text-[10px] uppercase tracking-widest transition-all rounded-lg"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

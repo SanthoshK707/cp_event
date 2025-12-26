@@ -12,6 +12,7 @@ import { checkRateLimit } from '@/lib/rateLimit';
 import type { SyncResponse } from '@/types';
 import { authOptions } from '../auth/[...nextauth]/route';
 
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -25,26 +26,33 @@ export async function POST(request: NextRequest) {
 
     const teamId = session.user.teamId;
 
-    // Rate limiting: 5 requests per minute per team
-    const identifier = teamId;
-    const rateLimit = checkRateLimit(identifier, 5, 60000);
-    
-    if (rateLimit.limited) {
-      const resetIn = Math.ceil((rateLimit.resetTime - Date.now()) / 1000);
-      return NextResponse.json<SyncResponse>(
-        { success: false, error: `Rate limit exceeded. Try again in ${resetIn} seconds.` },
-        { 
-          status: 429,
-          headers: {
-            'X-RateLimit-Limit': '5',
-            'X-RateLimit-Remaining': '0',
-            'X-RateLimit-Reset': rateLimit.resetTime.toString(),
-          }
-        }
-      );
-    }
+await connectDB();
 
-    await connectDB();
+// Rate limiting: 5 requests per minute per team
+const identifier = teamId;
+const rateLimit = await checkRateLimit(identifier, 5, 60000);
+
+if (rateLimit.limited) {
+  const resetIn = Math.ceil(
+    (rateLimit.resetTime - Date.now()) / 1000
+  );
+
+  return NextResponse.json<SyncResponse>(
+    {
+      success: false,
+      error: `Rate limit exceeded. Try again in ${resetIn} seconds.`,
+    },
+    {
+      status: 429,
+      headers: {
+        'X-RateLimit-Limit': '5',
+        'X-RateLimit-Remaining': '0',
+        'X-RateLimit-Reset': rateLimit.resetTime.toString(),
+      },
+    }
+  );
+}
+
 
     // Get team from database
     const team = await Team.findById(teamId);

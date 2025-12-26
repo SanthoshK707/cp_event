@@ -12,7 +12,7 @@ import { authOptions } from '../auth/[...nextauth]/route';
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session || !session.user?.teamId) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
@@ -59,6 +59,15 @@ export async function GET(request: NextRequest) {
 // POST - Update
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || !session.user?.teamId) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     await connectDB();
 
     const body = await request.json();
@@ -73,6 +82,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'Team ID required' },
         { status: 400 }
+      );
+    }
+
+    if (teamId !== session.user.teamId) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden: Cannot update another team\'s score' },
+        { status: 403 }
       );
     }
 
