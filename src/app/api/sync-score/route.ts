@@ -3,84 +3,73 @@
 // ===========================================
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
 import { connectDB } from '@/lib/db';
-import { TeamScore, Question } from '@/models';
+import { TeamScore, Question, Team } from '@/models';
 import { fetchTeamSubmissions } from '@/services/codeforcesService';
 import { calculateTeamScore } from '@/services/bingoCalculator';
 import { checkRateLimit } from '@/lib/rateLimit';
 import type { SyncResponse } from '@/types';
+import { authOptions } from '../auth/[...nextauth]/route';
 
-// import { Team } from '@/models';
-// import { getServerSession } from 'next-auth';
-// import { authOptions } from '@/lib/authOptions';
-
-const DUMMY_TEAM_ID = 'test-team-123';
-const DUMMY_CF_HANDLE = 'Geothermal';
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limiting: 5 requests per minute per team
-    const identifier = DUMMY_TEAM_ID;
-    const rateLimit = checkRateLimit(identifier, 5, 60000);
+    const session = await getServerSession(authOptions);
     
-    if (rateLimit.limited) {
-      const resetIn = Math.ceil((rateLimit.resetTime - Date.now()) / 1000);
+    if (!session || !session.user?.teamId) {
       return NextResponse.json<SyncResponse>(
-        { success: false, error: `Rate limit exceeded. Try again in ${resetIn} seconds.` },
-        { 
-          status: 429,
-          headers: {
-            'X-RateLimit-Limit': '5',
-            'X-RateLimit-Remaining': '0',
-            'X-RateLimit-Reset': rateLimit.resetTime.toString(),
-          }
-        }
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
       );
     }
 
-    await connectDB();
+    const teamId = session.user.teamId;
 
-// export async function POST(request: NextRequest) {
-//   try {
+await connectDB();
 
-//     const session = await getServerSession(authOptions);
-//     if (!session || !session.user?.teamId) {
-//       return NextResponse.json<SyncResponse>(
-//         { success: false, error: 'Unauthorized' },
-//         { status: 401 }
-//       );
-//     }
+// Rate limiting: 5 requests per minute per team
+const identifier = teamId;
+const rateLimit = await checkRateLimit(identifier, 5, 60000);
 
-//     const identifier = session.user.teamId;
-//     const rateLimit = checkRateLimit(identifier, 5, 60000);
-    
-//     if (rateLimit.limited) {
-//       const resetIn = Math.ceil((rateLimit.resetTime - Date.now()) / 1000);
-//       return NextResponse.json<SyncResponse>(
-//         { success: false, error: `Rate limit exceeded. Try again in ${resetIn} seconds.` },
-//         { 
-//           status: 429,
-//           headers: {
-//             'X-RateLimit-Limit': '5',
-//             'X-RateLimit-Remaining': '0',
-//             'X-RateLimit-Reset': rateLimit.resetTime.toString(),
-//           }
-//         }
-//       );
-//     }
+if (rateLimit.limited) {
+  const resetIn = Math.ceil(
+    (rateLimit.resetTime - Date.now()) / 1000
+  );
 
-//     await connectDB();
+  return NextResponse.json<SyncResponse>(
+    {
+      success: false,
+      error: `Rate limit exceeded. Try again in ${resetIn} seconds.`,
+    },
+    {
+      status: 429,
+      headers: {
+        'X-RateLimit-Limit': '5',
+        'X-RateLimit-Remaining': '0',
+        'X-RateLimit-Reset': rateLimit.resetTime.toString(),
+      },
+    }
+  );
+}
 
-//     const team = await Team.findById(session.user.teamId);
-//     if (!team) {
-//       return NextResponse.json<SyncResponse>(
-//         { success: false, error: 'Team not found' },
-//         { status: 404 }
-//       );
-//     }
 
-//     const teamId = team._id.toString();
-//     const cfHandle = team.codeforcesHandle;
+    // Get team from database
+    const team = await Team.findById(teamId);
+    if (!team) {
+      return NextResponse.json<SyncResponse>(
+        { success: false, error: 'Team not found' },
+        { status: 404 }
+      );
+    }
+
+    const cfHandle = team.codeforcesHandle;
+    if (!cfHandle) {
+      return NextResponse.json<SyncResponse>(
+        { success: false, error: 'Codeforces handle not set for this team' },
+        { status: 400 }
+      );
+    }
 
     const allQuestions = await Question.find({}).sort({ gridIndex: 1 });
     if (!allQuestions || allQuestions.length === 0) {
@@ -90,7 +79,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let teamScore = await TeamScore.findOne({ teamId: DUMMY_TEAM_ID });
+    let teamScore = await TeamScore.findOne({ teamId });
     if (!teamScore) {
       return NextResponse.json<SyncResponse>(
         { success: false, error: 'Team not initialized. Please login.' },
@@ -106,8 +95,7 @@ export async function POST(request: NextRequest) {
       };
     });
 
-    const submissionsResult = await fetchTeamSubmissions([DUMMY_CF_HANDLE]);
-    // const submissionsResult = await fetchTeamSubmissions([cfHandle]);
+    const submissionsResult = await fetchTeamSubmissions([cfHandle]);
     if (!submissionsResult.success) {
       return NextResponse.json<SyncResponse>(
         { success: false, error: submissionsResult.error },
@@ -144,10 +132,7 @@ export async function POST(request: NextRequest) {
     }
 
     await TeamScore.findOneAndUpdate(
-      {
-        teamId: DUMMY_TEAM_ID,
-        // teamId: teamId
-      },
+      { teamId },
       {
         solvedIndices: scoreResult.solvedIndices,
         currentScore: scoreResult.currentScore,

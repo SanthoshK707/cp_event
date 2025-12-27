@@ -67,18 +67,28 @@ export function calculateScore(
     solvedIndices: number[],
     problems: IProblem[]
 ): number {
-    // Base score from solved problems
-    let baseScore = 0;
-    for (const index of solvedIndices) {
-        const problem = problems.find((p) => p.gridIndex === index);
-        baseScore += problem?.points || POINTS_PER_PROBLEM;
-    }
-
-    // Bingo bonuses
     const completedLines = findCompletedBingoLines(solvedIndices);
-    const bingoBonus = completedLines.length * BINGO_BONUS_POINTS;
-
-    return baseScore + bingoBonus;
+    
+    // Track all boxes included in completed bingo lines
+    const boxesInBingo = new Set<number>();
+    for (const line of completedLines) {
+        for (const index of line) {
+            boxesInBingo.add(index);
+        }
+    }
+    
+    // Score from completed bingo lines (60 points per line)
+    let score = completedLines.length * 60;
+    
+    // Add points for solved boxes NOT in any bingo line (10 points each)
+    for (const index of solvedIndices) {
+        if (!boxesInBingo.has(index)) {
+            const problem = problems.find((p) => p.gridIndex === index);
+            score += problem?.points || POINTS_PER_PROBLEM;
+        }
+    }
+    
+    return score;
 }
 
 /**

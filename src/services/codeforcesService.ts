@@ -102,7 +102,12 @@ export async function fetchTeamSubmissions(
         // Remove duplicates (same contest + problem index)
         const uniqueProblems = new Map<string, CFSubmission>();
         for (const sub of allSubmissions) {
-            const key = `${sub.problem.contestId}-${sub.problem.index}`;
+            if (!sub?.problem?.contestId || !sub?.problem?.index) {
+                console.warn('[Codeforces] Invalid submission data, skipping:', sub);
+                continue;
+            }
+
+            const key = `${sub.problem.contestId}-${sub.problem.index.toUpperCase()}`;
             if (!uniqueProblems.has(key)) {
                 uniqueProblems.set(key, sub);
             }

@@ -1,26 +1,50 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Model } from "mongoose";
 
+/*
+ * Team Interface
+ */
 export interface ITeam extends Document {
-  teamId: string;
-  name: string;
-  members: string[];
-  codeforcesHandle: string;
-  lastSync: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
+  teamName: string;
+  email: string;
+  codeforcesHandle?: string | null;
+  hasRound2Access?: boolean;
 }
 
-const TeamSchema = new Schema<ITeam>(
-  {
-    teamId: { type: String, required: true, unique: true },
-    name: { type: String, required: true, unique: true },
-    members: [{ type: String, required: true }],
-    codeforcesHandle: { type: String, required: true },
-    lastSync: { type: Date, default: null },
+/*
+ * Team Schema
+ */
+const TeamSchema: Schema<ITeam> = new Schema({
+  teamName: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
   },
-  {
-    timestamps: true,
-  }
-);
 
-export default mongoose.models.Team || mongoose.model<ITeam>('Team', TeamSchema);
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+  },
+
+  // Will be set only the first time
+  codeforcesHandle: {
+    type: String,
+    default: null,
+    trim: true,
+  },
+
+  hasRound2Access: {
+    type: Boolean,
+    default: false,
+  },
+});
+
+/**
+ * Team Model
+ */
+const Team: Model<ITeam> =
+  mongoose.models.Team || mongoose.model<ITeam>("Team", TeamSchema);
+
+export default Team;

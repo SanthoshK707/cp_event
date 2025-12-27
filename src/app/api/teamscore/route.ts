@@ -86,10 +86,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Authorization check - ensure user can only update their own team's score
     if (teamId !== session.user.teamId) {
       return NextResponse.json(
-        { success: false, error: 'Forbidden - Cannot update other teams' scores' },
+        { success: false, error: 'Forbidden: Cannot update another team\'s score' },
         { status: 403 }
       );
     }

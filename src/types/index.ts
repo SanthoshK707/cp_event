@@ -5,7 +5,6 @@
 export interface ITeam {
     _id?: string;
     teamName: string;
-    password: string;
     members: string[];
     codeforcesHandle: string;
     lastSync: Date | null;
@@ -35,7 +34,6 @@ export interface ITeamScore {
 
 export interface LoginRequest {
     teamName: string;
-    password: string;
 }
 
 export interface LoginResponse {
